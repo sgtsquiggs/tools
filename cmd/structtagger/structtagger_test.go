@@ -26,6 +26,15 @@ func Test_tagValueGetter(t *testing.T) {
 			wantOk: true,
 		},
 		{
+			name: "json",
+			args: args{
+				tag:  `json:"content_left"`,
+				name: "json",
+			},
+			want:   "content_left",
+			wantOk: true,
+		},
+		{
 			name: "protobuf",
 			args: args{
 				tag:  `protobuf:"bytes,1,opt,name=contentLeft,proto3" json:"content_left,omitempty"`,
