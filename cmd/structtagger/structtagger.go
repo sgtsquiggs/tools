@@ -5,7 +5,9 @@
 // StructTagger is a tool to automate the creation of constants that match the tag value
 // of a struct. Given the name of a struct type T and that has tag Y defined for at least
 // one of its fields Z, structtagger will create a new self-contained Go source file implementing
+//
 //	const TZY = "Yvalue"
+//
 // The file is created in the same package and directory as the package that defines T, unless
 // the target is an import path, in which the package of the current directory will be used.
 // It has helpful defaults designed for use with go generate.
@@ -56,12 +58,12 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -164,7 +166,7 @@ func main() {
 		baseName := fmt.Sprintf("%s_structtags.go", types[0])
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
-	err := ioutil.WriteFile(outputName, src, 0644)
+	err := os.WriteFile(outputName, src, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}
@@ -327,7 +329,12 @@ func (f *File) genDecl(tags []string) func(ast.Node) bool {
 						continue
 					}
 
-					tag := reflect.StructTag(field.Tag.Value)
+					tagVal, err := strconv.Unquote(field.Tag.Value)
+					if err != nil {
+						tagVal = field.Tag.Value // If unquoting fails, use the raw value.
+					}
+
+					tag := reflect.StructTag(tagVal)
 					for _, tagName := range tags {
 						tagValue, ok := tagValueGetter(tag, tagName)
 						if !ok || tagValue == "" {
