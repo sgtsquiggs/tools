@@ -53,6 +53,24 @@ func Test_tagValueGetter(t *testing.T) {
 			wantOk: true,
 		},
 		{
+			name: "redis",
+			args: args{
+				tag:  `json:"id,omitempty" redis:"id,tag"`,
+				name: "redis",
+			},
+			want:   "id",
+			wantOk: true,
+		},
+		{
+			name: "redis untagged",
+			args: args{
+				tag:  `json:"id,omitempty"`,
+				name: "redis",
+			},
+			want:   "",
+			wantOk: false,
+		},
+		{
 			name: "undefined tag",
 			args: args{
 				tag:  `json:"id,omitempty" bson:"_id"`,

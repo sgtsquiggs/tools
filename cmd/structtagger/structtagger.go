@@ -105,7 +105,7 @@ func main() {
 	// Check tags
 	for _, tag := range tags {
 		if !validateTag(tag) {
-			log.Fatal("-tag option only supports json, bson, yaml, toml, protobuf")
+			log.Fatal("-tag option only supports json, bson, yaml, toml, protobuf, redis")
 		}
 	}
 
@@ -338,6 +338,10 @@ func (f *File) genDecl(tags []string) func(ast.Node) bool {
 					for _, tagName := range tags {
 						tagValue, ok := tagValueGetter(tag, tagName)
 						if !ok || tagValue == "" {
+							if tagName == "redis" {
+								// don't emit redis tags if not found
+								continue
+							}
 							tagValue = name.Name
 						}
 						if tagValue == "-" {
@@ -361,7 +365,7 @@ func (f *File) genDecl(tags []string) func(ast.Node) bool {
 
 func validateTag(name string) bool {
 	switch name {
-	case "json", "bson", "yaml", "toml", "protobuf":
+	case "json", "bson", "yaml", "toml", "protobuf", "redis":
 		return true
 	default:
 		return false
@@ -378,7 +382,7 @@ func tagValueGetter(tag reflect.StructTag, name string) (string, bool) {
 		return "", false
 	}
 	switch name {
-	case "json", "bson", "yaml", "toml": // ex: "field_name,omitempty"
+	case "json", "bson", "yaml", "toml", "redis": // ex: "field_name,omitempty"
 		return strings.SplitN(value, ",", 2)[0], true
 	case "protobuf": // ex: "bytes,1,opt,name=content,proto3"
 		name := strings.SplitN(value, ",", 5)[3]
