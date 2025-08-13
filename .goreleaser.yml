@@ -1,4 +1,5 @@
----
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
 project_name: tools
 
 release:
@@ -25,7 +26,7 @@ builds:
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
 
 archives:
-  - format: tar.gz
+  - formats: [ tar.gz ]
     wrap_in_directory: true
     name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
     files:
@@ -33,7 +34,7 @@ archives:
       - README.md
 
 snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
+  version_template: SNAPSHOT-{{ .Commit }}
 
 checksum:
   name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
