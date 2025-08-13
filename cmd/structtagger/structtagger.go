@@ -329,6 +329,11 @@ func (f *File) genDecl(tags []string) func(ast.Node) bool {
 						continue
 					}
 
+					// ignore unexported fields
+					if !name.IsExported() {
+						continue
+					}
+
 					tagVal, err := strconv.Unquote(field.Tag.Value)
 					if err != nil {
 						tagVal = field.Tag.Value // If unquoting fails, use the raw value.
