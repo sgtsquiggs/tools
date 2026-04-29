@@ -65,6 +65,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -269,12 +270,12 @@ func (g *Generator) generate(typeName string, tags []string) {
 	if len(values) == 0 {
 		log.Fatalf("no values defined for type %s", typeName)
 	}
-	g.Printf("\n")
-	g.Printf("const (\n")
-	for _, value := range values {
-		g.Printf("\t%s%s%s = \"%s\"\n", strings.Title(typeName), strings.Title(value.name), strings.Title(value.tag), value.value)
-	}
-	g.Printf(")\n")
+		g.Printf("\n")
+		g.Printf("const (\n")
+		for _, value := range values {
+			g.Printf("\t%s%s%s = \"%s\"\n", title(typeName), title(value.name), title(value.tag), value.value)
+		}
+		g.Printf(")\n")
 }
 
 // format returns the gofmt-ed contents of the Generator's buffer.
@@ -368,6 +369,15 @@ func (f *File) genDecl(tags []string) func(ast.Node) bool {
 
 // Helpers
 
+func title(s string) string {
+	if s == "" {
+		return ""
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
 func validateTag(name string) bool {
 	switch name {
 	case "json", "bson", "yaml", "toml", "protobuf", "redis":
@@ -390,8 +400,12 @@ func tagValueGetter(tag reflect.StructTag, name string) (string, bool) {
 	case "json", "bson", "yaml", "toml", "redis": // ex: "field_name,omitempty"
 		return strings.SplitN(value, ",", 2)[0], true
 	case "protobuf": // ex: "bytes,1,opt,name=content,proto3"
-		name := strings.SplitN(value, ",", 5)[3]
-		return strings.SplitN(name, "=", 2)[1], true
+		for _, part := range strings.Split(value, ",") {
+			if strings.HasPrefix(part, "name=") {
+				return strings.TrimPrefix(part, "name="), true
+			}
+		}
+		return "", false
 	default:
 		log.Fatalf("internal error: unsupported tag %s", name)
 		panic("unreachable")
