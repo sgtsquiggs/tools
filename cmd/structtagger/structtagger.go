@@ -53,6 +53,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -62,7 +63,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -151,7 +152,7 @@ func main() {
 	g.Printf("\n")
 	g.Printf("package %s", pkgName)
 
-	sort.Strings(types)
+	slices.Sort(types)
 
 	// Run generate for each type.
 	for _, typeName := range types {
@@ -199,7 +200,7 @@ type Generator struct {
 	pkg *Package     // Package we are scanning.
 }
 
-func (g *Generator) Printf(format string, args ...interface{}) {
+func (g *Generator) Printf(format string, args ...any) {
 	fmt.Fprintf(&g.buf, format, args...)
 }
 
@@ -263,19 +264,19 @@ func (g *Generator) generate(typeName string, tags []string) {
 		}
 	}
 
-	sort.Slice(values, func(i, j int) bool {
-		return values[i].name < values[j].name
+	slices.SortFunc(values, func(a, b Value) int {
+		return cmp.Compare(a.name, b.name)
 	})
 
 	if len(values) == 0 {
 		log.Fatalf("no values defined for type %s", typeName)
 	}
-		g.Printf("\n")
-		g.Printf("const (\n")
-		for _, value := range values {
-			g.Printf("\t%s%s%s = \"%s\"\n", title(typeName), title(value.name), title(value.tag), value.value)
-		}
-		g.Printf(")\n")
+	g.Printf("\n")
+	g.Printf("const (\n")
+	for _, value := range values {
+		g.Printf("\t%s%s%s = \"%s\"\n", title(typeName), title(value.name), title(value.tag), value.value)
+	}
+	g.Printf(")\n")
 }
 
 // format returns the gofmt-ed contents of the Generator's buffer.
@@ -400,9 +401,9 @@ func tagValueGetter(tag reflect.StructTag, name string) (string, bool) {
 	case "json", "bson", "yaml", "toml", "redis": // ex: "field_name,omitempty"
 		return strings.SplitN(value, ",", 2)[0], true
 	case "protobuf": // ex: "bytes,1,opt,name=content,proto3"
-		for _, part := range strings.Split(value, ",") {
-			if strings.HasPrefix(part, "name=") {
-				return strings.TrimPrefix(part, "name="), true
+		for part := range strings.SplitSeq(value, ",") {
+			if after, ok0 := strings.CutPrefix(part, "name="); ok0 {
+				return after, true
 			}
 		}
 		return "", false
