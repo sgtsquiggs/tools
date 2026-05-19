@@ -33,3 +33,6 @@ go.work.sum
 
 # GoReleaser output directory
 dist/
+
+# Build output
+/structtagger
